@@ -5,273 +5,140 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>학급 투표</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  :root {
-    --green: #1D9E75;
-    --green-dark: #0F6E56;
-    --green-light: #E1F5EE;
-    --amber: #F0992B;
-    --amber-light: #FAEEDA;
-    --amber-dark: #854F0B;
-    --bg: #F7F8F6;
-    --surface: #FFFFFF;
-    --border: rgba(0,0,0,0.10);
-    --border-md: rgba(0,0,0,0.18);
-    --text: #1A1A1A;
-    --text-muted: #6B7280;
-    --text-hint: #9CA3AF;
-    --radius: 14px;
-    --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Noto Sans KR', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 2rem 1rem 4rem;
-  }
-  .app {
-    width: 100%;
-    max-width: 560px;
-  }
-  .screen { display: none; }
-  .screen.active { display: block; }
+:root {
+  --green: #1D9E75; --green-dark: #0F6E56; --green-light: #E1F5EE;
+  --amber: #F0992B; --amber-light: #FAEEDA; --amber-dark: #854F0B;
+  --blue: #3B82F6; --blue-light: #EFF6FF; --blue-dark: #1D4ED8;
+  --bg: #F7F8F6; --surface: #FFFFFF;
+  --border: rgba(0,0,0,0.10); --border-md: rgba(0,0,0,0.18);
+  --text: #1A1A1A; --text-muted: #6B7280; --text-hint: #9CA3AF;
+  --radius: 14px; --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem 4rem; }
+.app { width: 100%; max-width: 560px; }
+.screen { display: none; }
+.screen.active { display: block; }
 
-  /* 헤더 */
-  .app-header {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 2rem;
-  }
-  .app-logo {
-    width: 36px; height: 36px; background: var(--green);
-    border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .app-name { font-size: 16px; font-weight: 700; color: var(--text); }
-  .app-sub { font-size: 12px; color: var(--text-muted); }
+.app-header { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+.app-logo { width: 36px; height: 36px; background: var(--green); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.app-name { font-size: 16px; font-weight: 700; }
+.app-sub { font-size: 12px; color: var(--text-muted); }
 
-  /* 카드 */
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    margin-bottom: 12px;
-  }
-  .card-title {
-    font-size: 13px; font-weight: 700; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: 0.06em;
-    margin-bottom: 1rem;
-  }
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 12px; }
+.card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
 
-  /* 폼 요소 */
-  label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; }
-  input[type="text"], input[type="number"] {
-    width: 100%; padding: 10px 14px;
-    border: 1px solid var(--border-md); border-radius: var(--radius-sm);
-    font-size: 15px; font-family: inherit; color: var(--text);
-    background: var(--bg); outline: none;
-    transition: border-color 0.15s;
-    margin-bottom: 12px;
-  }
-  input[type="text"]:focus, input[type="number"]:focus {
-    border-color: var(--green);
-    background: #fff;
-  }
-  .count-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .count-row input { width: 80px; margin-bottom: 0; }
-  .count-row span { font-size: 13px; color: var(--text-muted); }
+label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+input[type="text"], input[type="number"] { width: 100%; padding: 10px 14px; border: 1px solid var(--border-md); border-radius: var(--radius-sm); font-size: 15px; font-family: inherit; color: var(--text); background: var(--bg); outline: none; transition: border-color 0.15s; margin-bottom: 12px; }
+input:focus { border-color: var(--green); background: #fff; }
+.count-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.count-row input { width: 80px; margin-bottom: 0; }
+.count-row span { font-size: 13px; color: var(--text-muted); }
+.opt-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.opt-row input { flex: 1; margin-bottom: 0; }
+.opt-del { width: 38px; height: 38px; flex-shrink: 0; background: none; border: 1px solid var(--border-md); border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted); font-size: 15px; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+.opt-del:hover { background: #FEE2E2; border-color: #FCA5A5; color: #DC2626; }
 
-  /* 선택지 행 */
-  .opt-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .opt-row input { flex: 1; margin-bottom: 0; }
-  .opt-del {
-    width: 38px; height: 38px; flex-shrink: 0;
-    background: none; border: 1px solid var(--border-md);
-    border-radius: var(--radius-sm); cursor: pointer;
-    color: var(--text-muted); font-size: 15px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.1s;
-  }
-  .opt-del:hover { background: #FEE2E2; border-color: #FCA5A5; color: #DC2626; }
+.btn-add { width: 100%; padding: 9px; background: none; border: 1px dashed var(--border-md); border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; color: var(--text-muted); font-family: inherit; margin-bottom: 4px; transition: border-color 0.15s, color 0.15s; }
+.btn-add:hover { border-color: var(--green); color: var(--green); }
+.btn-primary { width: 100%; padding: 13px; background: var(--green); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; margin-top: 8px; transition: background 0.15s, transform 0.1s; }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-ghost { background: none; border: 1px solid var(--border-md); border-radius: var(--radius-sm); padding: 8px 18px; font-size: 13px; cursor: pointer; color: var(--text-muted); font-family: inherit; transition: background 0.1s; }
+.btn-ghost:hover { background: var(--bg); }
 
-  /* 버튼 */
-  .btn-add {
-    width: 100%; padding: 9px;
-    background: none; border: 1px dashed var(--border-md);
-    border-radius: var(--radius-sm); cursor: pointer;
-    font-size: 14px; color: var(--text-muted);
-    font-family: inherit; margin-bottom: 4px;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .btn-add:hover { border-color: var(--green); color: var(--green); }
-  .btn-primary {
-    width: 100%; padding: 13px;
-    background: var(--green); color: white; border: none;
-    border-radius: var(--radius-sm); cursor: pointer;
-    font-size: 15px; font-weight: 700; font-family: inherit;
-    margin-top: 8px;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .btn-primary:hover { background: var(--green-dark); }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-ghost {
-    background: none; border: 1px solid var(--border-md);
-    border-radius: var(--radius-sm); padding: 8px 18px;
-    font-size: 13px; cursor: pointer; color: var(--text-muted);
-    font-family: inherit;
-    transition: background 0.1s;
-  }
-  .btn-ghost:hover { background: var(--bg); }
+/* 모드 선택 */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 0.5rem; }
+.mode-btn { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 1.5rem 1rem; cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s, transform 0.1s; font-family: inherit; }
+.mode-btn:hover { border-color: var(--green); background: var(--green-light); }
+.mode-btn:active { transform: scale(0.97); }
+.mode-btn.blue:hover { border-color: var(--blue); background: var(--blue-light); }
+.mode-icon { font-size: 36px; display: block; margin-bottom: 10px; }
+.mode-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.mode-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
-  /* 투표 진행 */
-  .vote-question {
-    font-size: 20px; font-weight: 700; text-align: center;
-    line-height: 1.4; margin-bottom: 1.5rem; color: var(--text);
-  }
-  .counter-box {
-    background: var(--green-light);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px; text-align: center; margin-bottom: 1.25rem;
-    border: 1px solid rgba(29,158,117,0.2);
-  }
-  .counter-num { font-size: 24px; font-weight: 700; color: var(--green); }
-  .counter-label { font-size: 12px; color: var(--green-dark); margin-top: 2px; }
-  .dots-wrap { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 10px; }
-  .dot {
-    width: 13px; height: 13px; border-radius: 50%;
-    background: rgba(29,158,117,0.15); border: 1.5px solid rgba(29,158,117,0.3);
-    transition: all 0.2s;
-  }
-  .dot.done { background: var(--green); border-color: var(--green); transform: scale(1.1); }
+/* 투표 진행 */
+.vote-question { font-size: 20px; font-weight: 700; text-align: center; line-height: 1.4; margin-bottom: 1.5rem; }
+.counter-box { background: var(--green-light); border-radius: var(--radius-sm); padding: 12px 16px; text-align: center; margin-bottom: 1.25rem; border: 1px solid rgba(29,158,117,0.2); }
+.counter-num { font-size: 24px; font-weight: 700; color: var(--green); }
+.counter-label { font-size: 12px; color: var(--green-dark); margin-top: 2px; }
+.dots-wrap { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 10px; }
+.dot { width: 13px; height: 13px; border-radius: 50%; background: rgba(29,158,117,0.15); border: 1.5px solid rgba(29,158,117,0.3); transition: all 0.2s; }
+.dot.done { background: var(--green); border-color: var(--green); transform: scale(1.1); }
 
-  /* 키 힌트 */
-  .key-hint {
-    text-align: center; font-size: 12px; color: var(--text-hint);
-    margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 5px;
-  }
-  kbd {
-    display: inline-flex; align-items: center; justify-content: center;
-    background: var(--bg); border: 1px solid var(--border-md);
-    border-radius: 5px; font-size: 11px; font-weight: 700;
-    padding: 1px 7px; min-width: 26px; font-family: monospace;
-    color: var(--text-muted);
-  }
+.key-hint { text-align: center; font-size: 12px; color: var(--text-hint); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 5px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--border-md); border-radius: 5px; font-size: 11px; font-weight: 700; padding: 1px 7px; min-width: 26px; font-family: monospace; color: var(--text-muted); }
 
-  /* 투표 버튼 */
-  .vote-btn {
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; background: var(--surface);
-    border: 2px solid var(--border); border-radius: var(--radius);
-    padding: 15px 18px; font-size: 16px; font-weight: 500;
-    cursor: pointer; margin-bottom: 10px; color: var(--text);
-    text-align: left; position: relative; overflow: hidden;
-    font-family: inherit;
-    transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
-  }
-  .vote-btn:hover { border-color: var(--green); background: var(--green-light); }
-  .vote-btn:active { transform: scale(0.98); }
-  .num-badge {
-    min-width: 36px; height: 36px; border-radius: 8px;
-    background: var(--bg); color: var(--text-muted);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 700; font-family: monospace;
-    border: 1px solid var(--border-md);
-    transition: all 0.2s; flex-shrink: 0;
-  }
-  .vote-btn.selected {
-    border-color: var(--green); background: var(--green);
-    color: white; transform: scale(1.02);
-    box-shadow: 0 4px 20px rgba(29,158,117,0.3);
-  }
-  .vote-btn.selected .num-badge { background: rgba(255,255,255,0.22); color: white; border-color: rgba(255,255,255,0.3); }
-  .vote-btn.selected::after {
-    content: '✓'; position: absolute; right: 18px;
-    font-size: 20px; font-weight: 700; color: white;
-    animation: checkPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
-  }
-  @keyframes checkPop { 0%{transform:scale(0) rotate(-20deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+.vote-btn { display: flex; align-items: center; gap: 14px; width: 100%; background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 15px 18px; font-size: 16px; font-weight: 500; cursor: pointer; margin-bottom: 10px; color: var(--text); text-align: left; position: relative; overflow: hidden; font-family: inherit; transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s; }
+.vote-btn:hover { border-color: var(--green); background: var(--green-light); }
+.vote-btn:active { transform: scale(0.98); }
+.num-badge { min-width: 36px; height: 36px; border-radius: 8px; background: var(--bg); color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; font-family: monospace; border: 1px solid var(--border-md); transition: all 0.2s; flex-shrink: 0; }
+.vote-btn.selected { border-color: var(--green); background: var(--green); color: white; transform: scale(1.02); box-shadow: 0 4px 20px rgba(29,158,117,0.3); }
+.vote-btn.selected .num-badge { background: rgba(255,255,255,0.22); color: white; border-color: rgba(255,255,255,0.3); }
+.vote-btn.selected::after { content: '✓'; position: absolute; right: 18px; font-size: 20px; font-weight: 700; color: white; animation: checkPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275); }
+@keyframes checkPop { 0%{transform:scale(0) rotate(-20deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+.vote-btn.disabled-btn { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 
-  .confirm-btn {
-    width: 100%; padding: 13px; background: var(--green); color: white;
-    border: none; border-radius: var(--radius-sm); cursor: pointer;
-    font-size: 15px; font-weight: 700; font-family: inherit;
-    margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .confirm-btn:hover:not(:disabled) { background: var(--green-dark); }
-  .confirm-btn:active:not(:disabled) { transform: scale(0.98); }
-  .confirm-btn:disabled {
-    background: #E5E7EB; color: #9CA3AF; cursor: not-allowed;
-  }
-  .confirm-btn kbd { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.3); color: white; }
-  .confirm-btn:disabled kbd { background: #D1D5DB; border-color: #D1D5DB; color: #9CA3AF; }
+.confirm-btn { width: 100%; padding: 13px; background: var(--green); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s, transform 0.1s; }
+.confirm-btn:hover:not(:disabled) { background: var(--green-dark); }
+.confirm-btn:active:not(:disabled) { transform: scale(0.98); }
+.confirm-btn:disabled { background: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
+.confirm-btn kbd { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.3); color: white; }
+.confirm-btn:disabled kbd { background: #D1D5DB; border-color: #D1D5DB; color: #9CA3AF; }
+.teacher-link { text-align: center; margin-top: 10px; }
 
-  .teacher-link { text-align: center; margin-top: 10px; }
+/* QR 박스 */
+.qr-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 12px; display: flex; align-items: center; gap: 1rem; }
+.qr-code-wrap { flex-shrink: 0; }
+.qr-info { flex: 1; }
+.qr-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.qr-url { font-size: 11px; color: var(--text-muted); word-break: break-all; background: var(--bg); padding: 5px 8px; border-radius: 5px; margin-bottom: 6px; font-family: monospace; }
+.qr-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
-  /* 투표 완료 */
-  .done-card {
-    background: var(--surface); border-radius: var(--radius);
-    border: 1px solid var(--border); padding: 2.5rem 1.5rem;
-    text-align: center;
-  }
-  .done-icon { font-size: 60px; display: block; margin-bottom: 10px; animation: popBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
-  @keyframes popBounce { 0%{transform:scale(0) rotate(-10deg)} 70%{transform:scale(1.15) rotate(3deg)} 100%{transform:scale(1)} }
-  .done-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-  .done-sub { font-size: 14px; color: var(--text-muted); }
+/* 완료 */
+.done-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 2.5rem 1.5rem; text-align: center; }
+.done-icon { font-size: 60px; display: block; margin-bottom: 10px; animation: popBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+@keyframes popBounce { 0%{transform:scale(0) rotate(-10deg)} 70%{transform:scale(1.15) rotate(3deg)} 100%{transform:scale(1)} }
+.done-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.done-sub { font-size: 14px; color: var(--text-muted); }
 
-  /* 결과 공개 박스 */
-  .reveal-box {
-    background: var(--green-light); border: 1.5px solid var(--green);
-    border-radius: var(--radius); padding: 1.5rem; text-align: center;
-    margin-top: 12px;
-    animation: fadeUp 0.4s ease;
-  }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .reveal-tag {
-    display: inline-block; font-size: 11px; font-weight: 700;
-    background: var(--green); color: white; padding: 2px 10px;
-    border-radius: 99px; margin-bottom: 8px; letter-spacing: 0.04em;
-  }
-  .reveal-desc { font-size: 14px; color: var(--green-dark); margin-bottom: 14px; line-height: 1.6; }
-  .reveal-btn {
-    width: 100%; padding: 13px; background: var(--green); color: white;
-    border: none; border-radius: var(--radius-sm); cursor: pointer;
-    font-size: 15px; font-weight: 700; font-family: inherit;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .reveal-btn:hover { background: var(--green-dark); }
-  .reveal-btn:active { transform: scale(0.98); }
+/* 학생 대기 화면 */
+.waiting-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 3rem 1.5rem; text-align: center; }
+.waiting-spinner { width: 40px; height: 40px; border: 3px solid var(--green-light); border-top-color: var(--green); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-  /* 결과 화면 */
-  .result-question {
-    font-size: 18px; font-weight: 700; text-align: center;
-    margin-bottom: 0.25rem; line-height: 1.4;
-  }
-  .ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 1rem 0 1.5rem; }
-  .ring-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.reveal-box { background: var(--green-light); border: 1.5px solid var(--green); border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 12px; animation: fadeUp 0.4s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.reveal-tag { display: inline-block; font-size: 11px; font-weight: 700; background: var(--green); color: white; padding: 2px 10px; border-radius: 99px; margin-bottom: 8px; }
+.reveal-desc { font-size: 14px; color: var(--green-dark); margin-bottom: 14px; line-height: 1.6; }
+.reveal-btn { width: 100%; padding: 13px; background: var(--green); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; transition: background 0.15s, transform 0.1s; }
+.reveal-btn:hover { background: var(--green-dark); }
 
-  .emoji-row { margin-bottom: 18px; }
-  .emoji-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-  .emoji-label { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-  .emoji-count { font-size: 13px; color: var(--text-muted); }
-  .emoji-track { display: flex; flex-wrap: wrap; gap: 4px; min-height: 28px; }
-  .emoji-dot { font-size: 20px; opacity: 0; transform: scale(0) rotate(-20deg); display: inline-block; line-height: 1; }
-  .emoji-dot.show { animation: dotPop 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
-  @keyframes dotPop { 0%{opacity:0;transform:scale(0) rotate(-20deg)} 70%{transform:scale(1.2) rotate(5deg);opacity:1} 100%{opacity:1;transform:scale(1) rotate(0)} }
-  .winner-badge {
-    font-size: 11px; font-weight: 700;
-    background: var(--amber-light); color: var(--amber-dark);
-    padding: 2px 8px; border-radius: 99px;
-  }
-  .result-total { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 1rem; }
-  .btn-row { display: flex; gap: 8px; }
-  .btn-row .btn-ghost { flex: 1; }
-  .btn-row .btn-primary { flex: 1; margin-top: 0; }
+/* 결과 */
+.result-question { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 0.25rem; line-height: 1.4; }
+.ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 1rem 0 1.5rem; }
+.ring-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+.emoji-row { margin-bottom: 18px; }
+.emoji-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.emoji-label { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.emoji-count { font-size: 13px; color: var(--text-muted); }
+.emoji-track { display: flex; flex-wrap: wrap; gap: 4px; min-height: 28px; }
+.emoji-dot { font-size: 20px; opacity: 0; transform: scale(0) rotate(-20deg); display: inline-block; line-height: 1; }
+.emoji-dot.show { animation: dotPop 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+@keyframes dotPop { 0%{opacity:0;transform:scale(0) rotate(-20deg)} 70%{transform:scale(1.2) rotate(5deg);opacity:1} 100%{opacity:1;transform:scale(1) rotate(0)} }
+.winner-badge { font-size: 11px; font-weight: 700; background: var(--amber-light); color: var(--amber-dark); padding: 2px 8px; border-radius: 99px; }
+.result-total { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 1rem; }
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn-ghost { flex: 1; }
+.btn-row .btn-primary { flex: 1; margin-top: 0; }
+
+.notice { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+.tag-green { display: inline-block; font-size: 11px; font-weight: 700; background: var(--green); color: white; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
+.tag-blue { display: inline-block; font-size: 11px; font-weight: 700; background: var(--blue); color: white; padding: 2px 8px; border-radius: 99px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -284,8 +151,27 @@
     </div>
   </div>
 
-  <!-- 설정 화면 -->
-  <div class="screen active" id="setup-screen">
+  <!-- 0. 모드 선택 -->
+  <div class="screen active" id="mode-screen">
+    <div class="card">
+      <div class="card-title">투표 방식 선택</div>
+      <div class="mode-grid">
+        <button class="mode-btn" onclick="selectMode('local')">
+          <span class="mode-icon">🖥️</span>
+          <div class="mode-title">선생님 PC로</div>
+          <div class="mode-desc">학생들이 앞에 나와서<br>키보드로 투표</div>
+        </button>
+        <button class="mode-btn blue" onclick="selectMode('remote')">
+          <span class="mode-icon">📱</span>
+          <div class="mode-title">개인 기기로</div>
+          <div class="mode-desc">QR코드로 접속해서<br>각자 기기로 투표</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. 설정 화면 -->
+  <div class="screen" id="setup-screen">
     <div class="card">
       <div class="card-title">투표 설정</div>
       <label>투표 제목</label>
@@ -293,7 +179,7 @@
       <label>학생 수</label>
       <div class="count-row">
         <input type="number" id="student-count" min="1" max="100" value="25" />
-        <span>명 (모두 투표하면 결과 공개 대기)</span>
+        <span>명</span>
       </div>
     </div>
     <div class="card">
@@ -305,9 +191,10 @@
       <button class="btn-add" onclick="addOption()">+ 선택지 추가</button>
     </div>
     <button class="btn-primary" onclick="startVote()">투표 시작하기 →</button>
+    <div class="notice" style="margin-top:10px;"><button class="btn-ghost" onclick="showScreen('mode-screen')">← 모드 선택으로</button></div>
   </div>
 
-  <!-- 투표 화면 -->
+  <!-- 2. 교사 투표 진행 (로컬) -->
   <div class="screen" id="vote-screen">
     <div class="card">
       <div class="vote-question" id="display-title"></div>
@@ -327,7 +214,45 @@
     </div>
   </div>
 
-  <!-- 투표 완료 화면 -->
+  <!-- 3. 원격 투표 진행 (교사 화면) -->
+  <div class="screen" id="remote-teacher-screen">
+    <div id="qr-box-wrap"></div>
+    <div class="card">
+      <div class="vote-question" id="remote-display-title"></div>
+      <div class="counter-box">
+        <div class="counter-num"><span id="remote-voted-count">0</span> / <span id="remote-total-count">0</span></div>
+        <div class="counter-label">명 투표 완료</div>
+        <div class="dots-wrap" id="remote-vote-dots"></div>
+      </div>
+      <div id="remote-teacher-bottom">
+        <div class="teacher-link">
+          <button class="btn-ghost" onclick="showResults()">결과 보기 (교사)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 학생 투표 화면 (원격) -->
+  <div class="screen" id="student-vote-screen">
+    <div class="card">
+      <div class="vote-question" id="student-display-title"></div>
+      <div id="student-vote-options"></div>
+      <button class="confirm-btn" id="student-confirm-btn" disabled onclick="submitStudentVote()">
+        투표하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 5. 학생 대기 화면 -->
+  <div class="screen" id="student-waiting-screen">
+    <div class="waiting-card">
+      <div class="waiting-spinner"></div>
+      <div class="done-title">투표 완료!</div>
+      <div class="done-sub" style="margin-top:6px;">선생님이 결과를 공개할 때까지<br>기다려요 🎉</div>
+    </div>
+  </div>
+
+  <!-- 6. 투표 완료 (로컬) -->
   <div class="screen" id="voted-screen">
     <div class="done-card">
       <span class="done-icon" id="voted-icon">🎉</span>
@@ -337,7 +262,7 @@
     <div id="voted-bottom"></div>
   </div>
 
-  <!-- 결과 화면 -->
+  <!-- 7. 결과 화면 -->
   <div class="screen" id="result-screen">
     <div class="card">
       <div class="result-question" id="result-title"></div>
@@ -355,7 +280,7 @@
       <div id="result-bars"></div>
       <div class="result-total" id="result-total"></div>
       <div class="btn-row">
-        <button class="btn-ghost" onclick="backToVote()">← 투표로</button>
+        <button class="btn-ghost" id="back-to-vote-btn" onclick="backToVote()">← 투표로</button>
         <button class="btn-primary" onclick="resetAll()">새 투표</button>
       </div>
     </div>
@@ -363,79 +288,32 @@
 </div>
 
 <script>
+// Firebase 초기화
+const firebaseConfig = {
+  databaseURL: "https://classroom-vote-ef2b7-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
 const EMOJIS = ['⭐','🔥','💚','💜','🧡','💙','❤️','🌟'];
 let votes = {}, options = [], selectedOption = null;
 let totalStudents = 25, votedCount = 0, voteFinished = false;
-let currentScreen = 'setup-screen';
+let currentScreen = 'mode-screen';
+let voteMode = 'local'; // 'local' | 'remote'
+let voteKey = null; // Firebase 키
+let isStudent = false;
+let studentVoted = false;
+let remoteListener = null;
+
+// ── 오디오 ──
 let audioCtx = null;
+function getAC() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playSelectSound() { try { const c=getAC(),o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.type='sine'; o.frequency.setValueAtTime(880,c.currentTime); o.frequency.exponentialRampToValueAtTime(1100,c.currentTime+0.06); g.gain.setValueAtTime(0.18,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.1); o.start(c.currentTime);o.stop(c.currentTime+0.1); } catch(e){} }
+function playVoteSound() { try { const c=getAC(),t=c.currentTime; [[523,0],[659,0.1],[784,0.2]].forEach(([f,d])=>{ const o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.type='sine';o.frequency.value=f; g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.22,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.3); o.start(t+d);o.stop(t+d+0.35); }); } catch(e){} }
+function playAllDoneSound() { try { const c=getAC(),t=c.currentTime; [[523,0],[659,0.08],[784,0.16],[1047,0.26]].forEach(([f,d])=>{ const o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.type='sine';o.frequency.value=f; g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.2,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.45); o.start(t+d);o.stop(t+d+0.5); }); } catch(e){} }
+function playRevealSound() { try { const c=getAC(),t=c.currentTime; const k=c.createOscillator(),kg=c.createGain(); k.connect(kg);kg.connect(c.destination); k.type='sine'; k.frequency.setValueAtTime(150,t); k.frequency.exponentialRampToValueAtTime(40,t+0.15); kg.gain.setValueAtTime(0.5,t); kg.gain.exponentialRampToValueAtTime(0.001,t+0.2); k.start(t);k.stop(t+0.2); [[392,0.05],[523,0.18],[659,0.31],[784,0.44],[1047,0.58]].forEach(([f,d])=>{ const o=c.createOscillator(),g=c.createGain(); o.connect(g);g.connect(c.destination); o.type='triangle';o.frequency.value=f; g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.18,t+d+0.03); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.35); o.start(t+d);o.stop(t+d+0.4); }); } catch(e){} }
 
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function playSelectSound() {
-  try {
-    const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.06);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
-  } catch(e) {}
-}
-function playVoteSound() {
-  try {
-    const ctx = getAudioCtx(), t = ctx.currentTime;
-    [[523,0],[659,0.1],[784,0.2]].forEach(([freq, delay]) => {
-      const osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sine'; osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, t+delay);
-      gain.gain.linearRampToValueAtTime(0.22, t+delay+0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.3);
-      osc.start(t+delay); osc.stop(t+delay+0.35);
-    });
-  } catch(e) {}
-}
-function playAllDoneSound() {
-  try {
-    const ctx = getAudioCtx(), t = ctx.currentTime;
-    [[523,0],[659,0.08],[784,0.16],[1047,0.26]].forEach(([freq, delay]) => {
-      const osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'sine'; osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, t+delay);
-      gain.gain.linearRampToValueAtTime(0.2, t+delay+0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.45);
-      osc.start(t+delay); osc.stop(t+delay+0.5);
-    });
-  } catch(e) {}
-}
-function playRevealSound() {
-  try {
-    const ctx = getAudioCtx(), t = ctx.currentTime;
-    const kick = ctx.createOscillator(), kickGain = ctx.createGain();
-    kick.connect(kickGain); kickGain.connect(ctx.destination);
-    kick.type = 'sine';
-    kick.frequency.setValueAtTime(150, t);
-    kick.frequency.exponentialRampToValueAtTime(40, t+0.15);
-    kickGain.gain.setValueAtTime(0.5, t);
-    kickGain.gain.exponentialRampToValueAtTime(0.001, t+0.2);
-    kick.start(t); kick.stop(t+0.2);
-    [[392,0.05],[523,0.18],[659,0.31],[784,0.44],[1047,0.58]].forEach(([freq, delay]) => {
-      const osc = ctx.createOscillator(), gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'triangle'; osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, t+delay);
-      gain.gain.linearRampToValueAtTime(0.18, t+delay+0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.35);
-      osc.start(t+delay); osc.stop(t+delay+0.4);
-    });
-  } catch(e) {}
-}
-
+// ── 화면 전환 ──
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -443,6 +321,13 @@ function showScreen(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── 모드 선택 ──
+function selectMode(mode) {
+  voteMode = mode;
+  showScreen('setup-screen');
+}
+
+// ── 설정 ──
 function addOption() {
   const c = document.getElementById('options-container');
   const n = c.children.length + 1;
@@ -455,59 +340,82 @@ function removeOption(btn) {
   const c = document.getElementById('options-container');
   if (c.children.length > 2) btn.parentElement.remove();
 }
-function updateDots() {
-  document.querySelectorAll('.dot').forEach((d, i) => {
-    i < votedCount ? d.classList.add('done') : d.classList.remove('done');
-  });
-  document.getElementById('voted-count').textContent = votedCount;
-}
 
+// ── 투표 시작 ──
 function startVote() {
   const title = document.getElementById('vote-title').value.trim();
   if (!title) { alert('투표 제목을 입력해주세요.'); return; }
   totalStudents = parseInt(document.getElementById('student-count').value) || 25;
   options = Array.from(document.querySelectorAll('.opt-input')).map(i => i.value.trim()).filter(v => v);
   if (options.length < 2) { alert('선택지를 2개 이상 입력해주세요.'); return; }
-  votes = {}; options.forEach(o => votes[o] = 0);
-  votedCount = 0; voteFinished = false; selectedOption = null;
 
+  votes = {};
+  options.forEach(o => votes[o] = 0);
+  votedCount = 0; voteFinished = false; selectedOption = null; studentVoted = false;
+
+  if (voteMode === 'local') {
+    startLocalVote(title);
+  } else {
+    startRemoteVote(title);
+  }
+}
+
+// ── 로컬 모드 ──
+function startLocalVote(title) {
   document.getElementById('display-title').textContent = title;
   document.getElementById('total-count').textContent = totalStudents;
   document.getElementById('voted-count').textContent = 0;
+  buildDots('vote-dots', totalStudents);
+  buildVoteButtons('vote-options', false);
+  document.getElementById('confirm-btn').disabled = true;
+  showScreen('vote-screen');
+}
 
-  const dotsWrap = document.getElementById('vote-dots');
-  dotsWrap.innerHTML = '';
-  for (let i = 0; i < Math.min(totalStudents, 50); i++) {
+function buildDots(containerId, count) {
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = '';
+  for (let i = 0; i < Math.min(count, 50); i++) {
     const d = document.createElement('div'); d.className = 'dot';
-    dotsWrap.appendChild(d);
+    wrap.appendChild(d);
   }
-  if (totalStudents > 50) dotsWrap.innerHTML += `<span style="font-size:11px;color:#9CA3AF">+${totalStudents-50}</span>`;
+  if (count > 50) wrap.innerHTML += `<span style="font-size:11px;color:#9CA3AF">+${count-50}</span>`;
+}
 
-  const container = document.getElementById('vote-options');
+function updateDots(containerId) {
+  document.querySelectorAll(`#${containerId} .dot`).forEach((d, i) => {
+    i < votedCount ? d.classList.add('done') : d.classList.remove('done');
+  });
+}
+
+function buildVoteButtons(containerId, isStudentMode) {
+  const container = document.getElementById(containerId);
   container.innerHTML = '';
   options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'vote-btn';
     btn.innerHTML = `<span class="num-badge">${i+1}</span><span>${opt}</span>`;
-    btn.onclick = () => { if (!voteFinished) selectOption(opt, btn); };
+    if (isStudentMode) {
+      btn.onclick = () => selectStudentOption(opt, btn);
+    } else {
+      btn.onclick = () => { if (!voteFinished) selectOption(opt, btn); };
+    }
     container.appendChild(btn);
   });
-  document.getElementById('confirm-btn').disabled = true;
-  showScreen('vote-screen');
 }
 
 function selectOption(opt, btn) {
   if (voteFinished) return;
   playSelectSound();
   selectedOption = opt;
-  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   document.getElementById('confirm-btn').disabled = false;
 }
+
 function selectByIndex(idx) {
   if (currentScreen !== 'vote-screen' || voteFinished) return;
   if (idx < 0 || idx >= options.length) return;
-  const btns = document.querySelectorAll('.vote-btn');
+  const btns = document.querySelectorAll('#vote-options .vote-btn');
   selectOption(options[idx], btns[idx]);
   btns[idx].style.transform = 'scale(0.97)';
   setTimeout(() => { btns[idx].style.transform = ''; }, 120);
@@ -515,11 +423,13 @@ function selectByIndex(idx) {
 
 function submitVote() {
   if (!selectedOption || voteFinished) return;
-  votes[selectedOption]++; votedCount++;
+  votes[selectedOption]++;
+  votedCount++;
   selectedOption = null;
-  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('confirm-btn').disabled = true;
-  updateDots();
+  document.getElementById('voted-count').textContent = votedCount;
+  updateDots('vote-dots');
 
   if (votedCount >= totalStudents) {
     voteFinished = true;
@@ -547,29 +457,188 @@ function submitVote() {
 function backToVote() {
   if (voteFinished) return;
   selectedOption = null;
-  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('confirm-btn').disabled = true;
-  showScreen('vote-screen');
+  if (voteMode === 'remote') {
+    showScreen('remote-teacher-screen');
+  } else {
+    showScreen('vote-screen');
+  }
 }
 
+// ── 원격 모드 (Firebase) ──
+function startRemoteVote(title) {
+  // 이전 리스너 정리
+  if (remoteListener) { db.ref('votes/' + voteKey).off(); remoteListener = null; }
+
+  voteKey = 'vote_' + Date.now();
+  const voteData = {
+    title, totalStudents, options,
+    votes: votes,
+    status: 'active',
+    votedCount: 0,
+    createdAt: Date.now()
+  };
+
+  db.ref('votes/' + voteKey).set(voteData).then(() => {
+    // 교사 화면 구성
+    document.getElementById('remote-display-title').textContent = title;
+    document.getElementById('remote-total-count').textContent = totalStudents;
+    document.getElementById('remote-voted-count').textContent = 0;
+    buildDots('remote-vote-dots', totalStudents);
+
+    // QR 코드 생성
+    const studentUrl = `${location.href.split('?')[0]}?key=${voteKey}`;
+    const qrWrap = document.getElementById('qr-box-wrap');
+    qrWrap.innerHTML = `
+      <div class="qr-box">
+        <div class="qr-code-wrap" id="qr-canvas"></div>
+        <div class="qr-info">
+          <div class="tag-blue">학생용 QR</div>
+          <div class="qr-title">QR코드를 스캔해서 접속하세요</div>
+          <div class="qr-url">${studentUrl}</div>
+          <div class="qr-desc">학생들이 각자 기기로 스캔하면<br>투표 화면이 열려요</div>
+        </div>
+      </div>`;
+    new QRCode(document.getElementById('qr-canvas'), {
+      text: studentUrl, width: 100, height: 100,
+      colorDark: '#1A1A1A', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    showScreen('remote-teacher-screen');
+    listenRemoteVotes();
+  });
+}
+
+function listenRemoteVotes() {
+  remoteListener = db.ref('votes/' + voteKey).on('value', snap => {
+    const data = snap.val();
+    if (!data) return;
+
+    votes = data.votes || {};
+    votedCount = data.votedCount || 0;
+    voteFinished = data.status === 'finished';
+
+    document.getElementById('remote-voted-count').textContent = votedCount;
+    updateDots('remote-vote-dots');
+
+    if (voteFinished && currentScreen === 'remote-teacher-screen') {
+      playAllDoneSound();
+      document.getElementById('remote-teacher-bottom').innerHTML = `
+        <div class="reveal-box">
+          <div class="reveal-tag">교사 전용</div>
+          <div class="reveal-desc">모든 학생의 투표가 완료됐어요.<br>결과를 공개할 준비가 됐나요?</div>
+          <button class="reveal-btn" onclick="showResults()">결과 공개하기 🎉</button>
+        </div>`;
+    }
+
+    // 결과 화면이 열려 있으면 실시간 갱신
+    if (currentScreen === 'result-screen') renderResultBars();
+  });
+}
+
+// ── 학생 모드 (URL 파라미터로 진입) ──
+function initStudentMode(key) {
+  isStudent = true;
+  voteKey = key;
+  db.ref('votes/' + voteKey).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { alert('투표를 찾을 수 없어요.'); return; }
+    if (data.status !== 'active') { alert('이미 종료된 투표예요.'); return; }
+
+    options = data.options;
+    totalStudents = data.totalStudents;
+    votes = data.votes || {};
+
+    document.getElementById('student-display-title').textContent = data.title;
+    buildVoteButtons('student-vote-options', true);
+    document.getElementById('student-confirm-btn').disabled = true;
+    showScreen('student-vote-screen');
+
+    // 결과 공개 감지
+    db.ref('votes/' + voteKey + '/status').on('value', snap => {
+      if (snap.val() === 'revealed' && currentScreen === 'student-waiting-screen') {
+        db.ref('votes/' + voteKey).once('value').then(s => {
+          const d = s.val();
+          votes = d.votes; options = d.options; totalStudents = d.totalStudents; votedCount = d.votedCount;
+          playRevealSound();
+          showResultScreen();
+        });
+      }
+    });
+  });
+}
+
+function selectStudentOption(opt, btn) {
+  if (studentVoted) return;
+  playSelectSound();
+  selectedOption = opt;
+  document.querySelectorAll('#student-vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('student-confirm-btn').disabled = false;
+}
+
+function submitStudentVote() {
+  if (!selectedOption || studentVoted) return;
+  studentVoted = true;
+  playVoteSound();
+
+  db.ref('votes/' + voteKey).transaction(data => {
+    if (!data) return data;
+    data.votes[selectedOption] = (data.votes[selectedOption] || 0) + 1;
+    data.votedCount = (data.votedCount || 0) + 1;
+    if (data.votedCount >= data.totalStudents) data.status = 'finished';
+    return data;
+  });
+
+  showScreen('student-waiting-screen');
+}
+
+// ── 결과 표시 ──
 function showResults() {
+  // 원격 모드면 Firebase에 'revealed' 상태 저장
+  if (voteMode === 'remote') {
+    db.ref('votes/' + voteKey + '/status').set('revealed');
+  }
   playRevealSound();
-  document.getElementById('result-title').textContent = document.getElementById('display-title').textContent;
-  const total = Object.values(votes).reduce((a, b) => a + b, 0);
-  const pct = totalStudents > 0 ? Math.round((total / totalStudents) * 100) : 0;
-  document.getElementById('ring-label').textContent = `${total} / ${totalStudents}명`;
+  showResultScreen();
+}
+
+function showResultScreen() {
+  const titleEl = document.getElementById('result-title');
+  if (voteMode === 'remote' || isStudent) {
+    db.ref('votes/' + voteKey + '/title').once('value').then(s => {
+      titleEl.textContent = s.val() || '';
+    });
+  } else {
+    titleEl.textContent = document.getElementById('display-title').textContent;
+  }
+
+  document.getElementById('ring-label').textContent = `${votedCount} / ${totalStudents}명`;
+
+  // 결과 화면에서 '← 투표로' 버튼은 학생 모드에서 숨김
+  if (isStudent) {
+    document.getElementById('back-to-vote-btn').style.display = 'none';
+  }
+
   showScreen('result-screen');
+  const pct = totalStudents > 0 ? Math.round((votedCount / totalStudents) * 100) : 0;
   setTimeout(() => {
     const c = 226.2;
     document.getElementById('ring-fill').style.strokeDashoffset = c - (c * Math.min(pct, 100) / 100);
     document.getElementById('ring-pct-text').textContent = pct + '%';
   }, 80);
+  renderResultBars();
+}
 
-  const maxVotes = Math.max(...Object.values(votes));
+function renderResultBars() {
+  const total = Object.values(votes).reduce((a, b) => a + b, 0);
+  const maxVotes = total > 0 ? Math.max(...Object.values(votes)) : 0;
   const bars = document.getElementById('result-bars');
   bars.innerHTML = '';
   options.forEach((opt, idx) => {
-    const count = votes[opt];
+    const count = votes[opt] || 0;
     const p = total > 0 ? Math.round((count / total) * 100) : 0;
     const isWinner = count === maxVotes && count > 0;
     const emoji = EMOJIS[idx % EMOJIS.length];
@@ -577,17 +646,14 @@ function showResults() {
     row.className = 'emoji-row';
     row.innerHTML = `
       <div class="emoji-header">
-        <div class="emoji-label">
-          <span>${emoji}</span><span>${opt}</span>
-          ${isWinner ? '<span class="winner-badge">1위 🏆</span>' : ''}
-        </div>
+        <div class="emoji-label"><span>${emoji}</span><span>${opt}</span>${isWinner ? '<span class="winner-badge">1위 🏆</span>' : ''}</div>
         <div class="emoji-count">${count}표 · ${p}%</div>
       </div>
       <div class="emoji-track" id="track-${idx}"></div>`;
     bars.appendChild(row);
   });
   options.forEach((opt, idx) => {
-    const count = votes[opt], emoji = EMOJIS[idx % EMOJIS.length];
+    const count = votes[opt] || 0, emoji = EMOJIS[idx % EMOJIS.length];
     const track = document.getElementById('track-' + idx);
     for (let i = 0; i < count; i++) {
       const dot = document.createElement('span');
@@ -597,17 +663,27 @@ function showResults() {
     }
     if (count === 0) track.innerHTML = '<span style="font-size:13px;color:#9CA3AF">아직 없음</span>';
   });
-  document.getElementById('result-total').textContent = `총 ${total}표 · 참여율 ${pct}%`;
+  document.getElementById('result-total').textContent = `총 ${total}표 · 참여율 ${Math.round((votedCount/totalStudents)*100)}%`;
 }
 
 function resetAll() {
+  if (remoteListener && voteKey) { db.ref('votes/' + voteKey).off(); remoteListener = null; }
   document.getElementById('vote-title').value = '';
   document.querySelectorAll('.opt-input').forEach(i => i.value = '');
-  document.getElementById('student-count').value = totalStudents;
-  votes = {}; options = []; selectedOption = null; votedCount = 0; voteFinished = false;
-  showScreen('setup-screen');
+  document.getElementById('student-count').value = 25;
+  document.getElementById('options-container').innerHTML = `
+    <div class="opt-row"><input type="text" placeholder="선택지 1" class="opt-input"/><button class="opt-del" onclick="removeOption(this)">✕</button></div>
+    <div class="opt-row"><input type="text" placeholder="선택지 2" class="opt-input"/><button class="opt-del" onclick="removeOption(this)">✕</button></div>`;
+  document.getElementById('qr-box-wrap').innerHTML = '';
+  document.getElementById('remote-teacher-bottom').innerHTML = `<div class="teacher-link"><button class="btn-ghost" onclick="showResults()">결과 보기 (교사)</button></div>`;
+  document.getElementById('back-to-vote-btn').style.display = '';
+  votes = {}; options = []; selectedOption = null;
+  votedCount = 0; voteFinished = false; voteKey = null;
+  isStudent = false; studentVoted = false; voteMode = 'local';
+  showScreen('mode-screen');
 }
 
+// ── 키보드 ──
 document.addEventListener('keydown', function(e) {
   const tag = document.activeElement.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -617,6 +693,13 @@ document.addEventListener('keydown', function(e) {
     else if (e.key === 'Enter') { e.preventDefault(); if (selectedOption) submitVote(); }
   }
 });
+
+// ── 학생 접속 감지 (URL 파라미터) ──
+const urlParams = new URLSearchParams(location.search);
+const studentKey = urlParams.get('key');
+if (studentKey) {
+  initStudentMode(studentKey);
+}
 </script>
 </body>
 </html>
