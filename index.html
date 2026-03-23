@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>학급 투표</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --amber: #F0992B;
+    --amber-light: #FAEEDA;
+    --amber-dark: #854F0B;
+    --bg: #F7F8F6;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.10);
+    --border-md: rgba(0,0,0,0.18);
+    --text: #1A1A1A;
+    --text-muted: #6B7280;
+    --text-hint: #9CA3AF;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem 4rem;
+  }
+  .app {
+    width: 100%;
+    max-width: 560px;
+  }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* 헤더 */
+  .app-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 2rem;
+  }
+  .app-logo {
+    width: 36px; height: 36px; background: var(--green);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .app-name { font-size: 16px; font-weight: 700; color: var(--text); }
+  .app-sub { font-size: 12px; color: var(--text-muted); }
+
+  /* 카드 */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+
+  /* 폼 요소 */
+  label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+  input[type="text"], input[type="number"] {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border-md); border-radius: var(--radius-sm);
+    font-size: 15px; font-family: inherit; color: var(--text);
+    background: var(--bg); outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 12px;
+  }
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: var(--green);
+    background: #fff;
+  }
+  .count-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .count-row input { width: 80px; margin-bottom: 0; }
+  .count-row span { font-size: 13px; color: var(--text-muted); }
+
+  /* 선택지 행 */
+  .opt-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .opt-row input { flex: 1; margin-bottom: 0; }
+  .opt-del {
+    width: 38px; height: 38px; flex-shrink: 0;
+    background: none; border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm); cursor: pointer;
+    color: var(--text-muted); font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s;
+  }
+  .opt-del:hover { background: #FEE2E2; border-color: #FCA5A5; color: #DC2626; }
+
+  /* 버튼 */
+  .btn-add {
+    width: 100%; padding: 9px;
+    background: none; border: 1px dashed var(--border-md);
+    border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 14px; color: var(--text-muted);
+    font-family: inherit; margin-bottom: 4px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-add:hover { border-color: var(--green); color: var(--green); }
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: var(--green); color: white; border: none;
+    border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    margin-top: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-ghost {
+    background: none; border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm); padding: 8px 18px;
+    font-size: 13px; cursor: pointer; color: var(--text-muted);
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+  .btn-ghost:hover { background: var(--bg); }
+
+  /* 투표 진행 */
+  .vote-question {
+    font-size: 20px; font-weight: 700; text-align: center;
+    line-height: 1.4; margin-bottom: 1.5rem; color: var(--text);
+  }
+  .counter-box {
+    background: var(--green-light);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px; text-align: center; margin-bottom: 1.25rem;
+    border: 1px solid rgba(29,158,117,0.2);
+  }
+  .counter-num { font-size: 24px; font-weight: 700; color: var(--green); }
+  .counter-label { font-size: 12px; color: var(--green-dark); margin-top: 2px; }
+  .dots-wrap { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 10px; }
+  .dot {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: rgba(29,158,117,0.15); border: 1.5px solid rgba(29,158,117,0.3);
+    transition: all 0.2s;
+  }
+  .dot.done { background: var(--green); border-color: var(--green); transform: scale(1.1); }
+
+  /* 키 힌트 */
+  .key-hint {
+    text-align: center; font-size: 12px; color: var(--text-hint);
+    margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  kbd {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--bg); border: 1px solid var(--border-md);
+    border-radius: 5px; font-size: 11px; font-weight: 700;
+    padding: 1px 7px; min-width: 26px; font-family: monospace;
+    color: var(--text-muted);
+  }
+
+  /* 투표 버튼 */
+  .vote-btn {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%; background: var(--surface);
+    border: 2px solid var(--border); border-radius: var(--radius);
+    padding: 15px 18px; font-size: 16px; font-weight: 500;
+    cursor: pointer; margin-bottom: 10px; color: var(--text);
+    text-align: left; position: relative; overflow: hidden;
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s, box-shadow 0.15s;
+  }
+  .vote-btn:hover { border-color: var(--green); background: var(--green-light); }
+  .vote-btn:active { transform: scale(0.98); }
+  .num-badge {
+    min-width: 36px; height: 36px; border-radius: 8px;
+    background: var(--bg); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; font-family: monospace;
+    border: 1px solid var(--border-md);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .vote-btn.selected {
+    border-color: var(--green); background: var(--green);
+    color: white; transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(29,158,117,0.3);
+  }
+  .vote-btn.selected .num-badge { background: rgba(255,255,255,0.22); color: white; border-color: rgba(255,255,255,0.3); }
+  .vote-btn.selected::after {
+    content: '✓'; position: absolute; right: 18px;
+    font-size: 20px; font-weight: 700; color: white;
+    animation: checkPop 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes checkPop { 0%{transform:scale(0) rotate(-20deg);opacity:0} 100%{transform:scale(1) rotate(0);opacity:1} }
+
+  .confirm-btn {
+    width: 100%; padding: 13px; background: var(--green); color: white;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .confirm-btn:hover:not(:disabled) { background: var(--green-dark); }
+  .confirm-btn:active:not(:disabled) { transform: scale(0.98); }
+  .confirm-btn:disabled {
+    background: #E5E7EB; color: #9CA3AF; cursor: not-allowed;
+  }
+  .confirm-btn kbd { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.3); color: white; }
+  .confirm-btn:disabled kbd { background: #D1D5DB; border-color: #D1D5DB; color: #9CA3AF; }
+
+  .teacher-link { text-align: center; margin-top: 10px; }
+
+  /* 투표 완료 */
+  .done-card {
+    background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+  .done-icon { font-size: 60px; display: block; margin-bottom: 10px; animation: popBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+  @keyframes popBounce { 0%{transform:scale(0) rotate(-10deg)} 70%{transform:scale(1.15) rotate(3deg)} 100%{transform:scale(1)} }
+  .done-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .done-sub { font-size: 14px; color: var(--text-muted); }
+
+  /* 결과 공개 박스 */
+  .reveal-box {
+    background: var(--green-light); border: 1.5px solid var(--green);
+    border-radius: var(--radius); padding: 1.5rem; text-align: center;
+    margin-top: 12px;
+    animation: fadeUp 0.4s ease;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .reveal-tag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    background: var(--green); color: white; padding: 2px 10px;
+    border-radius: 99px; margin-bottom: 8px; letter-spacing: 0.04em;
+  }
+  .reveal-desc { font-size: 14px; color: var(--green-dark); margin-bottom: 14px; line-height: 1.6; }
+  .reveal-btn {
+    width: 100%; padding: 13px; background: var(--green); color: white;
+    border: none; border-radius: var(--radius-sm); cursor: pointer;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .reveal-btn:hover { background: var(--green-dark); }
+  .reveal-btn:active { transform: scale(0.98); }
+
+  /* 결과 화면 */
+  .result-question {
+    font-size: 18px; font-weight: 700; text-align: center;
+    margin-bottom: 0.25rem; line-height: 1.4;
+  }
+  .ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 1rem 0 1.5rem; }
+  .ring-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  .emoji-row { margin-bottom: 18px; }
+  .emoji-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .emoji-label { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .emoji-count { font-size: 13px; color: var(--text-muted); }
+  .emoji-track { display: flex; flex-wrap: wrap; gap: 4px; min-height: 28px; }
+  .emoji-dot { font-size: 20px; opacity: 0; transform: scale(0) rotate(-20deg); display: inline-block; line-height: 1; }
+  .emoji-dot.show { animation: dotPop 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+  @keyframes dotPop { 0%{opacity:0;transform:scale(0) rotate(-20deg)} 70%{transform:scale(1.2) rotate(5deg);opacity:1} 100%{opacity:1;transform:scale(1) rotate(0)} }
+  .winner-badge {
+    font-size: 11px; font-weight: 700;
+    background: var(--amber-light); color: var(--amber-dark);
+    padding: 2px 8px; border-radius: 99px;
+  }
+  .result-total { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 1rem; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn-ghost { flex: 1; }
+  .btn-row .btn-primary { flex: 1; margin-top: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="app-header">
+    <div class="app-logo">🗳️</div>
+    <div>
+      <div class="app-name">학급 투표</div>
+      <div class="app-sub">우리 반 실시간 투표 시스템</div>
+    </div>
+  </div>
+
+  <!-- 설정 화면 -->
+  <div class="screen active" id="setup-screen">
+    <div class="card">
+      <div class="card-title">투표 설정</div>
+      <label>투표 제목</label>
+      <input type="text" id="vote-title" placeholder="예) 이번 주 체육 시간에 무엇을 할까요?" />
+      <label>학생 수</label>
+      <div class="count-row">
+        <input type="number" id="student-count" min="1" max="100" value="25" />
+        <span>명 (모두 투표하면 결과 공개 대기)</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">선택지</div>
+      <div id="options-container">
+        <div class="opt-row"><input type="text" placeholder="선택지 1" class="opt-input" /><button class="opt-del" onclick="removeOption(this)">✕</button></div>
+        <div class="opt-row"><input type="text" placeholder="선택지 2" class="opt-input" /><button class="opt-del" onclick="removeOption(this)">✕</button></div>
+      </div>
+      <button class="btn-add" onclick="addOption()">+ 선택지 추가</button>
+    </div>
+    <button class="btn-primary" onclick="startVote()">투표 시작하기 →</button>
+  </div>
+
+  <!-- 투표 화면 -->
+  <div class="screen" id="vote-screen">
+    <div class="card">
+      <div class="vote-question" id="display-title"></div>
+      <div class="counter-box">
+        <div class="counter-num"><span id="voted-count">0</span> / <span id="total-count">0</span></div>
+        <div class="counter-label">명 투표 완료</div>
+        <div class="dots-wrap" id="vote-dots"></div>
+      </div>
+      <div class="key-hint">숫자 키로 선택 &nbsp;·&nbsp; <kbd>Enter</kbd> 로 확인</div>
+      <div id="vote-options"></div>
+      <button class="confirm-btn" id="confirm-btn" disabled onclick="submitVote()">
+        투표하기 &nbsp;<kbd>Enter</kbd>
+      </button>
+      <div class="teacher-link">
+        <button class="btn-ghost" onclick="showResults()">결과 보기 (교사)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 투표 완료 화면 -->
+  <div class="screen" id="voted-screen">
+    <div class="done-card">
+      <span class="done-icon" id="voted-icon">🎉</span>
+      <div class="done-title" id="voted-title">투표 완료!</div>
+      <div class="done-sub" id="voted-remaining"></div>
+    </div>
+    <div id="voted-bottom"></div>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="screen" id="result-screen">
+    <div class="card">
+      <div class="result-question" id="result-title"></div>
+      <div class="ring-wrap">
+        <svg width="84" height="84" viewBox="0 0 84 84">
+          <circle cx="42" cy="42" r="36" fill="none" stroke="#E5E7EB" stroke-width="7"/>
+          <circle id="ring-fill" cx="42" cy="42" r="36" fill="none" stroke="#1D9E75" stroke-width="7"
+            stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"
+            transform="rotate(-90 42 42)" style="transition: stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1)"/>
+          <text x="42" y="38" text-anchor="middle" font-size="15" font-weight="700" fill="#1A1A1A" id="ring-pct-text" font-family="'Noto Sans KR', sans-serif">0%</text>
+          <text x="42" y="52" text-anchor="middle" font-size="10" fill="#6B7280" font-family="'Noto Sans KR', sans-serif">참여율</text>
+        </svg>
+        <div class="ring-sub" id="ring-label">0 / 0명</div>
+      </div>
+      <div id="result-bars"></div>
+      <div class="result-total" id="result-total"></div>
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="backToVote()">← 투표로</button>
+        <button class="btn-primary" onclick="resetAll()">새 투표</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EMOJIS = ['⭐','🔥','💚','💜','🧡','💙','❤️','🌟'];
+let votes = {}, options = [], selectedOption = null;
+let totalStudents = 25, votedCount = 0, voteFinished = false;
+let currentScreen = 'setup-screen';
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSelectSound() {
+  try {
+    const ctx = getAudioCtx(), osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
+  } catch(e) {}
+}
+function playVoteSound() {
+  try {
+    const ctx = getAudioCtx(), t = ctx.currentTime;
+    [[523,0],[659,0.1],[784,0.2]].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t+delay);
+      gain.gain.linearRampToValueAtTime(0.22, t+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.3);
+      osc.start(t+delay); osc.stop(t+delay+0.35);
+    });
+  } catch(e) {}
+}
+function playAllDoneSound() {
+  try {
+    const ctx = getAudioCtx(), t = ctx.currentTime;
+    [[523,0],[659,0.08],[784,0.16],[1047,0.26]].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t+delay);
+      gain.gain.linearRampToValueAtTime(0.2, t+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.45);
+      osc.start(t+delay); osc.stop(t+delay+0.5);
+    });
+  } catch(e) {}
+}
+function playRevealSound() {
+  try {
+    const ctx = getAudioCtx(), t = ctx.currentTime;
+    const kick = ctx.createOscillator(), kickGain = ctx.createGain();
+    kick.connect(kickGain); kickGain.connect(ctx.destination);
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(150, t);
+    kick.frequency.exponentialRampToValueAtTime(40, t+0.15);
+    kickGain.gain.setValueAtTime(0.5, t);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, t+0.2);
+    kick.start(t); kick.stop(t+0.2);
+    [[392,0.05],[523,0.18],[659,0.31],[784,0.44],[1047,0.58]].forEach(([freq, delay]) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t+delay);
+      gain.gain.linearRampToValueAtTime(0.18, t+delay+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t+delay+0.35);
+      osc.start(t+delay); osc.stop(t+delay+0.4);
+    });
+  } catch(e) {}
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function addOption() {
+  const c = document.getElementById('options-container');
+  const n = c.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'opt-row';
+  row.innerHTML = `<input type="text" placeholder="선택지 ${n}" class="opt-input"/><button class="opt-del" onclick="removeOption(this)">✕</button>`;
+  c.appendChild(row);
+}
+function removeOption(btn) {
+  const c = document.getElementById('options-container');
+  if (c.children.length > 2) btn.parentElement.remove();
+}
+function updateDots() {
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    i < votedCount ? d.classList.add('done') : d.classList.remove('done');
+  });
+  document.getElementById('voted-count').textContent = votedCount;
+}
+
+function startVote() {
+  const title = document.getElementById('vote-title').value.trim();
+  if (!title) { alert('투표 제목을 입력해주세요.'); return; }
+  totalStudents = parseInt(document.getElementById('student-count').value) || 25;
+  options = Array.from(document.querySelectorAll('.opt-input')).map(i => i.value.trim()).filter(v => v);
+  if (options.length < 2) { alert('선택지를 2개 이상 입력해주세요.'); return; }
+  votes = {}; options.forEach(o => votes[o] = 0);
+  votedCount = 0; voteFinished = false; selectedOption = null;
+
+  document.getElementById('display-title').textContent = title;
+  document.getElementById('total-count').textContent = totalStudents;
+  document.getElementById('voted-count').textContent = 0;
+
+  const dotsWrap = document.getElementById('vote-dots');
+  dotsWrap.innerHTML = '';
+  for (let i = 0; i < Math.min(totalStudents, 50); i++) {
+    const d = document.createElement('div'); d.className = 'dot';
+    dotsWrap.appendChild(d);
+  }
+  if (totalStudents > 50) dotsWrap.innerHTML += `<span style="font-size:11px;color:#9CA3AF">+${totalStudents-50}</span>`;
+
+  const container = document.getElementById('vote-options');
+  container.innerHTML = '';
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'vote-btn';
+    btn.innerHTML = `<span class="num-badge">${i+1}</span><span>${opt}</span>`;
+    btn.onclick = () => { if (!voteFinished) selectOption(opt, btn); };
+    container.appendChild(btn);
+  });
+  document.getElementById('confirm-btn').disabled = true;
+  showScreen('vote-screen');
+}
+
+function selectOption(opt, btn) {
+  if (voteFinished) return;
+  playSelectSound();
+  selectedOption = opt;
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('confirm-btn').disabled = false;
+}
+function selectByIndex(idx) {
+  if (currentScreen !== 'vote-screen' || voteFinished) return;
+  if (idx < 0 || idx >= options.length) return;
+  const btns = document.querySelectorAll('.vote-btn');
+  selectOption(options[idx], btns[idx]);
+  btns[idx].style.transform = 'scale(0.97)';
+  setTimeout(() => { btns[idx].style.transform = ''; }, 120);
+}
+
+function submitVote() {
+  if (!selectedOption || voteFinished) return;
+  votes[selectedOption]++; votedCount++;
+  selectedOption = null;
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('confirm-btn').disabled = true;
+  updateDots();
+
+  if (votedCount >= totalStudents) {
+    voteFinished = true;
+    playAllDoneSound();
+    document.getElementById('voted-icon').textContent = '🎊';
+    document.getElementById('voted-title').textContent = '모두 투표했어요!';
+    document.getElementById('voted-remaining').textContent = '선생님이 결과를 공개할 거예요.';
+    document.getElementById('voted-bottom').innerHTML = `
+      <div class="reveal-box">
+        <div class="reveal-tag">교사 전용</div>
+        <div class="reveal-desc">모든 학생의 투표가 완료됐어요.<br>결과를 공개할 준비가 됐나요?</div>
+        <button class="reveal-btn" onclick="showResults()">결과 공개하기 🎉</button>
+      </div>`;
+  } else {
+    playVoteSound();
+    const remaining = totalStudents - votedCount;
+    document.getElementById('voted-icon').textContent = '🎉';
+    document.getElementById('voted-title').textContent = '투표 완료!';
+    document.getElementById('voted-remaining').textContent = `아직 ${remaining}명 남았어요. 기다려요!`;
+    document.getElementById('voted-bottom').innerHTML = `<button class="btn-ghost" style="width:100%;margin-top:12px" onclick="backToVote()">← 돌아가기</button>`;
+  }
+  showScreen('voted-screen');
+}
+
+function backToVote() {
+  if (voteFinished) return;
+  selectedOption = null;
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('confirm-btn').disabled = true;
+  showScreen('vote-screen');
+}
+
+function showResults() {
+  playRevealSound();
+  document.getElementById('result-title').textContent = document.getElementById('display-title').textContent;
+  const total = Object.values(votes).reduce((a, b) => a + b, 0);
+  const pct = totalStudents > 0 ? Math.round((total / totalStudents) * 100) : 0;
+  document.getElementById('ring-label').textContent = `${total} / ${totalStudents}명`;
+  showScreen('result-screen');
+  setTimeout(() => {
+    const c = 226.2;
+    document.getElementById('ring-fill').style.strokeDashoffset = c - (c * Math.min(pct, 100) / 100);
+    document.getElementById('ring-pct-text').textContent = pct + '%';
+  }, 80);
+
+  const maxVotes = Math.max(...Object.values(votes));
+  const bars = document.getElementById('result-bars');
+  bars.innerHTML = '';
+  options.forEach((opt, idx) => {
+    const count = votes[opt];
+    const p = total > 0 ? Math.round((count / total) * 100) : 0;
+    const isWinner = count === maxVotes && count > 0;
+    const emoji = EMOJIS[idx % EMOJIS.length];
+    const row = document.createElement('div');
+    row.className = 'emoji-row';
+    row.innerHTML = `
+      <div class="emoji-header">
+        <div class="emoji-label">
+          <span>${emoji}</span><span>${opt}</span>
+          ${isWinner ? '<span class="winner-badge">1위 🏆</span>' : ''}
+        </div>
+        <div class="emoji-count">${count}표 · ${p}%</div>
+      </div>
+      <div class="emoji-track" id="track-${idx}"></div>`;
+    bars.appendChild(row);
+  });
+  options.forEach((opt, idx) => {
+    const count = votes[opt], emoji = EMOJIS[idx % EMOJIS.length];
+    const track = document.getElementById('track-' + idx);
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'emoji-dot'; dot.textContent = emoji;
+      track.appendChild(dot);
+      setTimeout(() => dot.classList.add('show'), i * 80 + 200);
+    }
+    if (count === 0) track.innerHTML = '<span style="font-size:13px;color:#9CA3AF">아직 없음</span>';
+  });
+  document.getElementById('result-total').textContent = `총 ${total}표 · 참여율 ${pct}%`;
+}
+
+function resetAll() {
+  document.getElementById('vote-title').value = '';
+  document.querySelectorAll('.opt-input').forEach(i => i.value = '');
+  document.getElementById('student-count').value = totalStudents;
+  votes = {}; options = []; selectedOption = null; votedCount = 0; voteFinished = false;
+  showScreen('setup-screen');
+}
+
+document.addEventListener('keydown', function(e) {
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (currentScreen === 'vote-screen' && !voteFinished) {
+    const num = parseInt(e.key);
+    if (!isNaN(num) && num >= 1 && num <= 9) selectByIndex(num - 1);
+    else if (e.key === 'Enter') { e.preventDefault(); if (selectedOption) submitVote(); }
+  }
+});
+</script>
+</body>
+</html>
